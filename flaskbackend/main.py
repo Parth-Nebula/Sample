@@ -78,10 +78,6 @@ def some_request0():
         return jsonify({'status': 'success', 'data': {'sessionid': i}})
 
 
-
-
-
-
 @app.route('/getpcs/', methods = ['GET', 'POST'])
 @cross_origin()
 def some_request1():
@@ -99,11 +95,6 @@ def some_request1():
         username = UserSessions[sessionid]
         
         return jsonify({'status': 'success', 'data': {'pcs': UserPcs[username] }})
-
-
-
-
-
 
 
 @app.route('/perform/', methods = ['GET', 'POST'])
@@ -128,10 +119,10 @@ def some_request2():
         action = request.get_json()['action']
 
         if pc not in UserPcs[username] :
-            return render_template('error.html',code = "Access denied" )
+            return jsonify({'status': '403', 'code': "Access denied"})
 
         if Permissions[(username,pc)][action-1] == 0 :
-            return render_template('getpcspage.html',code = "Permission denied" )
+            return jsonify({'status': '403', 'code': "Permission denied"})
 
         PcTasks[pc][action-1] = 1
         return jsonify({'status': 'success', 'code': "Action performed"})
