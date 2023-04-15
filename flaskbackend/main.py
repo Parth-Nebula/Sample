@@ -91,7 +91,7 @@ def some_request1():
     
     if request.method == 'POST':
         
-        sessionid = request.form['sessionid']
+        sessionid = request.get_json()['sessionid']
 
         if sessionid not in UserSessions :
             return render_template('error.html',code = "Session expired" )
@@ -116,16 +116,16 @@ def some_request2():
     
     if request.method == 'POST':
         
-        sessionid = request.form['sessionid']
+        sessionid = request.get_json()['sessionid']
 
         if sessionid not in UserSessions :
             return render_template('error.html',code = "Session expired" )
 
         username = UserSessions[sessionid]
 
-        pc = request.form['pc']
+        pc = request.get_json()['pc']
 
-        action = request.form['action']
+        action = request.get_json()['action']
 
         if pc not in UserPcs[username] :
             return render_template('error.html',code = "Access denied" )
@@ -134,8 +134,7 @@ def some_request2():
             return render_template('getpcspage.html',code = "Permission denied" )
 
         PcTasks[pc][action-1] = 1
-        
-        return render_template('getpcspage.html', code = "Action performed" )
+        return jsonify({'status': 'success', 'code': "Action performed"})
 
 
 
@@ -152,8 +151,8 @@ def now_request0():
     
     if request.method == 'POST':
         
-        pc = request.form['pc']
-        password = request.form['password']
+        pc = request.get_json()['pc']
+        password = request.get_json()['password']
 
         if pc not in Pcs or Pcs[pc] != password :
             return render_template('error.html',code = "Credentials wrong" )
@@ -162,9 +161,7 @@ def now_request0():
             if i not in UserSessions and i not in PcSessions : break
 
         PcSessions[i] = pc
-        
-        return render_template('pchome.html',code = "Login Successful" , sessionid = i )
-
+        return jsonify({'status': 'success', 'data': {'sessionid': i}, 'code': "Login Successful"})
 
 
 
@@ -179,16 +176,16 @@ def now_request1():
     
     if request.method == 'POST':
         
-        sessionid = request.form['sessionid']
+        sessionid = request.get_json()['sessionid']
 
         if sessionid not in PcSessions :
             return render_template('error.html',code = "Session expired" )
 
         pc = UserSessions[sessionid]
 
-        username = request.form['username']
+        username = request.get_json()['username']
 
-        password = request.form['password']
+        password = request.get_json()['password']
 
         if username not in Users or Users[username] != password :
             return render_template('error.html',code = "Credentials wrong" )
@@ -196,8 +193,7 @@ def now_request1():
         UserPcs[username].add(pc)
         PcUsers[pc].add(username)
         Permissions[(username,pc)]=[0,0,0]
-
-        return render_template('getuserspage.html', code = "Login successful"  )
+        return jsonify({'status': 'success', 'code': "Login Successful"})
 
 
 
@@ -213,14 +209,13 @@ def now_request2():
     
     if request.method == 'POST':
         
-        sessionid = request.form['sessionid']
+        sessionid = request.get_json()['sessionid']
 
         if sessionid not in PcSessions :
             return render_template('error.html',code = "Session expired" )
 
         pc = UserSessions[sessionid]
-        
-        return render_template('getuserspage.html', code = "Request successful" , users = PcUsers[pc] )
+        return jsonify({'status': 'success', 'code': "Request successful", 'data': {'users':PcUsers[pc]}})
 
 
 
@@ -235,20 +230,19 @@ def now_request3():
     
     if request.method == 'POST':
         
-        sessionid = request.form['sessionid']
+        sessionid = request.get_json()['sessionid']
 
         if sessionid not in PcSessions :
             return render_template('error.html',code = "Session expired" )
 
         pc = UserSessions[sessionid]
 
-        username = request.form['username']
+        username = request.get_json()['username']
 
         if username not in PcUsers[pc] :
             return render_template('getpermissionsspage.html', code = "Access Denied"   )
         
-        return render_template('getpermissionsspage.html', code = "Request successful" , permissions = PcUsers[pc][username]  )
-
+        return jsonify({'status': 'success', 'code': "Request successful", 'data': {'permissions':PcUsers[pc][username]}})
 
 
 
@@ -267,26 +261,25 @@ def now_request4():
     
     if request.method == 'POST':
         
-        sessionid = request.form['sessionid']
+        sessionid = request.get_json()['sessionid']
 
-        if sessoinid not in PcSessions :
+        if sessionid not in PcSessions :
             return render_template('error.html',code = "Session expired" )
 
-        pc = Sessions[sessionid]
+        pc = UserSessions[sessionid]
 
-        username = request.form['username']
+        username = request.get_json()['username']
 
         if username not in PcUsers[pc] :
             return render_template('getpermissionsspage.html', code = "Access Denied"   )
 
-        change = request.form['change']
+        change = request.get_json()['change']
 
         if change > 0 :
             PcUsers[pc][username][change-1] = 1
         else :
             PcUsers[pc][username][-1*(change+1)] = 0
-        
-        return render_template('getpermissionsspage.html', code = "Request successful" , permissions = PcUsers[pc][username]  )
+        return jsonify({'status': 'success', 'code': "Request successful", 'data': {'permissions':PcUsers[pc][username]}})
 
 
 
@@ -302,12 +295,12 @@ def now_request5():
     
     if request.method == 'POST':
         
-        sessionid = request.form['sessionid']
+        sessionid = request.get_json()['sessionid']
 
-        if sessoinid not in PcSessions :
+        if sessionid not in PcSessions :
             return render_template('error.html',code = "Session expired" )
 
-        pc = Sessions[sessionid]
+        pc = UserSessions[sessionid]
 
         for i in range ( 3 ) :
 
@@ -316,9 +309,8 @@ def now_request5():
                 PcTasks[pc][i] = 0
                 
                 return render_template('pchome.html',code = "Do action" , action = i + 1 )
-        
-        return render_template('pchome.html',code = "No action" , action = 0 )
             
+        return jsonify({'status': 'success', 'code': "No Action", 'data': {'action':0}})
        
 
 
