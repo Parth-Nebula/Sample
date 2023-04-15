@@ -22,24 +22,29 @@ PcTasks = { "mypc1" : [ 0, 0, 0 ] }         # Remaining tasks in a Pc
 
 
 
-import * from  flask
+from flask import Flask, request, render_template, jsonify
+from flask_cors import CORS, cross_origin
 
-app = Flask("__main__")
 
-
+app = Flask(__name__)
+cors = CORS(app)
+app.config['CORS_HEADERS'] = 'Content-Type'
 
 ### examples
 
-@app.route("/")
+@app.route("/", methods=["GET"])
+@cross_origin()
 def my_index() :
-    return render_template("index.html",token = "Hello")
+    response = jsonify(message="Simple server is running")
+    response.headers.add("Access-Control-Allow-Origin", "*")
+    return response
 
 
 
 @app.route('/some/', methods = ['GET', 'POST'])
 def example():
-    if method == 'POST':
-        exInput = request.form['exInput']
+    if request.method == 'POST':
+        return "Req recieved"
 
     return render_template('example.html',token = "some")
 
@@ -51,26 +56,26 @@ def example():
 ### for users
 
 @app.route('/login/', methods = ['GET', 'POST'])
+@cross_origin()
 def some_request0():
-
-    if method == 'GET':
-
-        return render_template('loginpage.html')
+    if request.method == 'GET':
+        response = jsonify(message="Simple server is running")
+        return response
     
-    if method == 'POST':
-        
-        username = request.form['username']
-        password = request.form['password']
-
+    if request.method == 'POST':
+        print(request.get_json())
+        username = request.get_json()['username']
+        password = request.get_json()['password']
+        print(username)
         if username not in Users or Users[username] != password :
-            return render_template('error.html',code = "Credentials wrong" )
+            return "Error: Wrong Credentials"
 
         for i in range ( 100000 ) :
             if i not in UserSessions and i not in PcSessions : break
 
         UserSessions[i] = username
         
-        return render_template('home.html',code = "Login Successful" , sessionid = i )
+        return jsonify({'status': 'success', 'data': {'sessionid': i}})
 
 
 
@@ -78,22 +83,22 @@ def some_request0():
 
 
 @app.route('/getpcs/', methods = ['GET', 'POST'])
+@cross_origin()
 def some_request1():
 
-    if method == 'GET':
-
+    if request.method == 'GET':
         return render_template('getpcspage.html')
     
-    if method == 'POST':
+    if request.method == 'POST':
         
         sessionid = request.form['sessionid']
 
-        if sessoinid not in UserSessions :
+        if sessionid not in UserSessions :
             return render_template('error.html',code = "Session expired" )
 
-        username = Sessions[sessionid]
+        username = UserSessions[sessionid]
         
-        return render_template('getpcspage.html', code = "Request successful" , pcs = UserPcs[username] )
+        return jsonify({'status': 'success', 'data': {'pcs': UserPcs[username] }})
 
 
 
@@ -102,20 +107,21 @@ def some_request1():
 
 
 @app.route('/perform/', methods = ['GET', 'POST'])
+@cross_origin()
 def some_request2():
 
-    if method == 'GET':
+    if request.method == 'GET':
 
         return render_template('doaction.html')
     
-    if method == 'POST':
+    if request.method == 'POST':
         
         sessionid = request.form['sessionid']
 
-        if sessoinid not in UserSessions :
+        if sessionid not in UserSessions :
             return render_template('error.html',code = "Session expired" )
 
-        username = Sessions[sessionid]
+        username = UserSessions[sessionid]
 
         pc = request.form['pc']
 
@@ -137,18 +143,19 @@ def some_request2():
 ### for pcs
 
 @app.route('/pclogin/', methods = ['GET', 'POST'])
+@cross_origin()
 def now_request0():
 
-    if method == 'GET':
+    if request.method == 'GET':
 
         return render_template('pcloginpage.html')
     
-    if method == 'POST':
+    if request.method == 'POST':
         
         pc = request.form['pc']
         password = request.form['password']
 
-        if pc not in PCs or Pcs[pc] != password :
+        if pc not in Pcs or Pcs[pc] != password :
             return render_template('error.html',code = "Credentials wrong" )
 
         for i in range ( 100000 ) :
@@ -163,20 +170,21 @@ def now_request0():
 
 
 @app.route('/pcloginuser/', methods = ['GET', 'POST'])
+@cross_origin()
 def now_request1():
 
-    if method == 'GET':
+    if request.method == 'GET':
 
         return render_template('loginuserpage.html')
     
-    if method == 'POST':
+    if request.method == 'POST':
         
         sessionid = request.form['sessionid']
 
-        if sessoinid not in PcSessions :
+        if sessionid not in PcSessions :
             return render_template('error.html',code = "Session expired" )
 
-        pc = Sessions[sessionid]
+        pc = UserSessions[sessionid]
 
         username = request.form['username']
 
@@ -196,20 +204,21 @@ def now_request1():
     
 
 @app.route('/getusers/', methods = ['GET', 'POST'])
+@cross_origin()
 def now_request2():
 
-    if method == 'GET':
+    if request.method == 'GET':
 
         return render_template('getuserspage.html')
     
-    if method == 'POST':
+    if request.method == 'POST':
         
         sessionid = request.form['sessionid']
 
-        if sessoinid not in PcSessions :
+        if sessionid not in PcSessions :
             return render_template('error.html',code = "Session expired" )
 
-        pc = Sessions[sessionid]
+        pc = UserSessions[sessionid]
         
         return render_template('getuserspage.html', code = "Request successful" , users = PcUsers[pc] )
 
@@ -217,20 +226,21 @@ def now_request2():
 
 
 @app.route('/getpermissions/', methods = ['GET', 'POST'])
+@cross_origin()
 def now_request3():
 
-    if method == 'GET':
+    if request.method == 'GET':
 
         return render_template('getpermissionsspage.html')
     
-    if method == 'POST':
+    if request.method == 'POST':
         
         sessionid = request.form['sessionid']
 
-        if sessoinid not in PcSessions :
+        if sessionid not in PcSessions :
             return render_template('error.html',code = "Session expired" )
 
-        pc = Sessions[sessionid]
+        pc = UserSessions[sessionid]
 
         username = request.form['username']
 
@@ -248,13 +258,14 @@ def now_request3():
 
 
 @app.route('/changepermissions/', methods = ['GET', 'POST'])
+@cross_origin()
 def now_request4():
 
-    if method == 'GET':
+    if request.method == 'GET':
 
         return render_template('getpermissionsspage.html')
     
-    if method == 'POST':
+    if request.method == 'POST':
         
         sessionid = request.form['sessionid']
 
@@ -282,13 +293,14 @@ def now_request4():
 
 
 @app.route('/isaction/', methods = ['GET', 'POST'])
+@cross_origin()
 def now_request5():
 
-    if method == 'GET':
+    if request.method == 'GET':
 
         return render_template('pchome.html')
     
-    if method == 'POST':
+    if request.method == 'POST':
         
         sessionid = request.form['sessionid']
 
@@ -311,5 +323,4 @@ def now_request5():
 
 
 
-
-app.run(debug = True )
+app.run(host="0.0.0.0", port="5001", debug=True)
